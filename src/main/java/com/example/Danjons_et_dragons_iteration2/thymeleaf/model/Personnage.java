@@ -1,4 +1,4 @@
-package com.example.Danjons_et_dragons_iteration2.model;
+package com.example.Danjons_et_dragons_iteration2.thymeleaf.model;
 
 public class Personnage {
 
