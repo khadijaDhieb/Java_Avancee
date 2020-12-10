@@ -5,12 +5,15 @@ import java.util.List;
 
 import com.example.Danjons_et_dragons_iteration2.thymeleaf.form.PersonageForm;
 import com.example.Danjons_et_dragons_iteration2.thymeleaf.model.Personnage;
+import com.example.Danjons_et_dragons_iteration2.thymeleaf.model.PersonnageWrapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.client.RestTemplate;
 
 @Controller
 public class MainController {
@@ -25,6 +28,10 @@ public class MainController {
         personnagesList.add(new Personnage(5 , "khad" , "magicien"));
     }
 
+    @Autowired
+    private RestTemplate restTemplate;
+
+
     // Injectez (inject) via application.properties.
     @Value("${welcome.message}")
     private String message;
@@ -32,6 +39,7 @@ public class MainController {
     @Value("${error.message}")
     private String errorMessage;
 
+//=======================================================================
     @RequestMapping(value = { "/", "/index" }, method = RequestMethod.GET)
     public String index(Model model) {
 
@@ -39,26 +47,31 @@ public class MainController {
 
         return "index";
     }
-
+//====================================================================
     @RequestMapping(value = { "/listPersonnages" }, method = RequestMethod.GET)
     public String personList(Model model) {
 
-        model.addAttribute("personages", personnagesList);
+        PersonnageWrapper response = restTemplate.getForObject(
+                "http://localhost:8080/Personnages",
+                PersonnageWrapper.class);
+        List<Personnage> personnages = response.getPersonnages();
+        System.out.println(response.toString());
+        model.addAttribute("personages", personnages);
 
         return "listPersonnages";
     }
-
+//======================================================================
     @RequestMapping(value = { "/addPersonage" }, method = RequestMethod.GET)
-    public String showAddPersonPage(Model model) {
+    public String showAddPersonagePage(Model model) {
 
         PersonageForm personForm = new PersonageForm();
         model.addAttribute("personageForm", personForm);
 
         return "addPersonage";
     }
-
+//======================================================
     @RequestMapping(value = { "/addPersonage" }, method = RequestMethod.POST)
-    public String savePerson(Model model, //
+    public String savePersonage(Model model, //
                              @ModelAttribute("personageForm") PersonageForm personForm) {
 
         String name = personForm.getName();
@@ -67,7 +80,7 @@ public class MainController {
         if (name != null && name.length() > 0 //
                 && type != null && type.length() > 0) {
             Personnage newPerson = new Personnage(1 , name, type);
-            personnagesList.add(newPerson);
+            //personnages.add(newPerson);
 
             return "redirect:/listPersonnages";
         }
