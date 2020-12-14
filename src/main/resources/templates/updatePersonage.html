@@ -1,0 +1,22 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>update Person</title>
+    <link rel="stylesheet" type="text/css" th:href="@{/css/style.css}"/>
+</head>
+<body>
+<h1>Update a Personage:</h1>
+<form
+      th:action="@{/updatePersonage/}"
+      th:object="${personageForm}"
+      method="post">
+    <input type=hidden th:field="${personageForm.id}" >
+    <label for="name">Name</label>
+    <input type="text" th:field="*{name}" id="name" th:placeholder="${personageName}">
+    <label for="type">Type</label>
+    <input type="text" th:field="*{type}" id="type" th:placeholder="${personageType}">
+    <input type="submit" value="Update">
+</form>
+</body>
+</html>

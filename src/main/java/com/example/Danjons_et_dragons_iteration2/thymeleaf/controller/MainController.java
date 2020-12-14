@@ -8,29 +8,19 @@ import com.example.Danjons_et_dragons_iteration2.thymeleaf.model.Personnage;
 import com.example.Danjons_et_dragons_iteration2.thymeleaf.model.PersonnageWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
 @Controller
 public class MainController {
 
-    private static final List<Personnage> personnagesList = new ArrayList<>();
-
-    static {
-        personnagesList.add(new Personnage(1 , "khad" , "guerrier"));
-        personnagesList.add(new Personnage(2 , "khadi" , "guerrier"));
-        personnagesList.add(new Personnage(3 , "khadij" , "magicien"));
-        personnagesList.add(new Personnage(4 , "khadija" , "guerrier"));
-        personnagesList.add(new Personnage(5 , "khad" , "magicien"));
-    }
-
     @Autowired
     private RestTemplate restTemplate;
 
+    private String apiUrl =  "http://localhost:8081/Personnages/" ;
 
     // Injectez (inject) via application.properties.
     @Value("${welcome.message}")
@@ -39,29 +29,39 @@ public class MainController {
     @Value("${error.message}")
     private String errorMessage;
 
-//=======================================================================
-    @RequestMapping(value = { "/", "/index" }, method = RequestMethod.GET)
+    //=======================================================================
+    @RequestMapping(value = {"/", "/index"}, method = RequestMethod.GET)
     public String index(Model model) {
 
         model.addAttribute("message", message);
 
         return "index";
     }
-//====================================================================
-    @RequestMapping(value = { "/listPersonnages" }, method = RequestMethod.GET)
+
+    //====================================================================
+    @RequestMapping(value = {"/listPersonnages"}, method = RequestMethod.GET)
     public String personList(Model model) {
 
-        PersonnageWrapper response = restTemplate.getForObject(
-                "http://localhost:8080/Personnages",
-                PersonnageWrapper.class);
-        List<Personnage> personnages = response.getPersonnages();
-        System.out.println(response.toString());
+        Personnage[] personnages = restTemplate.getForObject( apiUrl,
+                Personnage[].class);
         model.addAttribute("personages", personnages);
 
         return "listPersonnages";
     }
-//======================================================================
-    @RequestMapping(value = { "/addPersonage" }, method = RequestMethod.GET)
+
+    //======================================================================
+    @RequestMapping(value = {"/displayPersonnage/{id}"}, method = RequestMethod.GET)
+    public String displayPersonage(Model model , @PathVariable int id) {
+
+        Personnage personnage = restTemplate.getForObject(
+                apiUrl + id,
+                Personnage.class);
+        model.addAttribute("personage", personnage);
+
+        return "displayPersonnage";
+    }
+    //======================================================================
+    @RequestMapping(value = {"/addPersonage"}, method = RequestMethod.GET)
     public String showAddPersonagePage(Model model) {
 
         PersonageForm personForm = new PersonageForm();
@@ -69,24 +69,73 @@ public class MainController {
 
         return "addPersonage";
     }
-//======================================================
-    @RequestMapping(value = { "/addPersonage" }, method = RequestMethod.POST)
+
+    //======================================================
+    @RequestMapping(value = {"/addPersonage"}, method = RequestMethod.POST)
     public String savePersonage(Model model, //
-                             @ModelAttribute("personageForm") PersonageForm personForm) {
+                                @ModelAttribute("personageForm") PersonageForm personForm) {
 
         String name = personForm.getName();
         String type = personForm.getType();
 
         if (name != null && name.length() > 0 //
                 && type != null && type.length() > 0) {
-            Personnage newPerson = new Personnage(1 , name, type);
+            Personnage newPerson = new Personnage(7, name, type);
             //personnages.add(newPerson);
+            Personnage person = restTemplate.postForObject(apiUrl,
+                    newPerson, Personnage.class);
+
 
             return "redirect:/listPersonnages";
         }
 
         model.addAttribute("errorMessage", errorMessage);
         return "addPersonage";
+    }
+    //===============================================================
+
+    @RequestMapping(value = {"/updatePersonage/{id}"}, method = RequestMethod.GET)
+    public String showUpdatePersonagePage(Model model, @PathVariable int id) {
+
+        PersonageForm personForm = new PersonageForm();
+        personForm.setId(id);
+        Personnage p = restTemplate.getForObject(
+                apiUrl+ id,
+                Personnage.class);
+        model.addAttribute("personageForm", personForm);
+        model.addAttribute("personageName", p.getNom());
+        model.addAttribute("personageType", p.getType());
+
+        return "updatePersonage";
+    }
+    //=====================================================================
+
+    @PostMapping(value = {"/updatePersonage/"})
+    public String updatePersonage(Model model, //
+                                @ModelAttribute("personageForm") PersonageForm personForm ) {
+        int id = personForm.getId();
+        String name = personForm.getName();
+        String type = personForm.getType();
+
+        if (name != null && name.length() > 0 //
+                && type != null && type.length() > 0) {
+            Personnage newPerson = new Personnage(id, name, type);
+            restTemplate.put(apiUrl +id,
+                    newPerson);
+
+
+            return "redirect:/listPersonnages";
+        }
+
+        model.addAttribute("errorMessage", errorMessage);
+        return "updatePersonage";
+    }
+//===================================================================================
+
+    @GetMapping (value = {"/deletePersonage/{id}"})
+    public String deletePersonage (Model model, @PathVariable int id){
+        restTemplate.delete(apiUrl +id);
+        return "redirect:/listPersonnages";
     }
 
 }
